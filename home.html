@@ -1,0 +1,1148 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="{{ language }}">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ARKONIX — Чат з {{ discussion.name }}</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap"
+        rel="stylesheet">
+    <style>
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'DM Sans', sans-serif;
+            background: #0C1829;
+            color: #F0F6FF;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background-image: linear-gradient(rgba(0, 212, 255, 0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(0, 212, 255, 0.05) 1px, transparent 1px);
+            background-size: 60px 60px;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        /* HEADER */
+        .chat-header {
+            background: rgba(12, 24, 41, 0.97);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(0, 212, 255, 0.14);
+            padding: 14px 24px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            position: relative;
+            z-index: 10;
+            flex-shrink: 0;
+        }
+
+        .chat-header::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, #7C5CFC, #00D4FF, transparent);
+            opacity: 0.5;
+        }
+
+        .back-btn {
+            width: 38px;
+            height: 38px;
+            border-radius: 10px;
+            background: rgba(0, 212, 255, 0.07);
+            border: 1px solid rgba(0, 212, 255, 0.25);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #00D4FF;
+            font-size: 1.1em;
+            transition: all 0.2s;
+            text-decoration: none;
+            flex-shrink: 0;
+        }
+
+        .back-btn:hover {
+            background: rgba(0, 212, 255, 0.15);
+        }
+
+        .client-avatar {
+            width: 42px;
+            height: 42px;
+            border-radius: 12px;
+            background: linear-gradient(135deg, rgba(0, 212, 255, 0.15), rgba(124, 92, 252, 0.15));
+            border: 1px solid rgba(0, 212, 255, 0.25);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2em;
+            flex-shrink: 0;
+        }
+
+        .client-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .client-name {
+            font-family: 'Syne', sans-serif;
+            font-size: 0.95em;
+            font-weight: 700;
+            color: #F0F6FF;
+        }
+
+        .client-sub {
+            font-size: 0.78em;
+            color: #4A6585;
+        }
+
+        .header-tags {
+            display: flex;
+            gap: 6px;
+            flex-shrink: 0;
+            flex-wrap: wrap;
+        }
+
+        .htag {
+            padding: 4px 10px;
+            border-radius: 100px;
+            font-size: 0.72em;
+            font-weight: 600;
+        }
+
+        .htag-service {
+            background: rgba(124, 92, 252, 0.12);
+            border: 1px solid rgba(124, 92, 252, 0.3);
+            color: #9B7EFF;
+        }
+
+        .htag-budget {
+            background: rgba(0, 212, 255, 0.07);
+            border: 1px solid rgba(0, 212, 255, 0.22);
+            color: #00D4FF;
+        }
+
+        .htag-agreed {
+            background: rgba(0, 200, 100, 0.09);
+            border: 1px solid rgba(0, 200, 100, 0.28);
+            color: #4AE896;
+        }
+
+        .htag-closed {
+            background: rgba(120, 140, 160, 0.1);
+            border: 1px solid rgba(120, 140, 160, 0.22);
+            color: #7A9AB8;
+        }
+
+        /* BODY */
+        .chat-body {
+            flex: 1;
+            display: flex;
+            overflow: hidden;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* SIDEBAR */
+        .sidebar {
+            width: 300px;
+            flex-shrink: 0;
+            background: rgba(10, 20, 36, 0.92);
+            border-right: 1px solid rgba(0, 212, 255, 0.09);
+            overflow-y: auto;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        .sidebar::-webkit-scrollbar {
+            width: 3px;
+        }
+
+        .sidebar::-webkit-scrollbar-thumb {
+            background: rgba(0, 212, 255, 0.15);
+            border-radius: 3px;
+        }
+
+        .sidebar-title {
+            font-family: 'Syne', sans-serif;
+            font-size: 0.7em;
+            font-weight: 700;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            color: #3A5570;
+            margin-bottom: 2px;
+        }
+
+        .info-block {
+            background: rgba(0, 212, 255, 0.04);
+            border: 1px solid rgba(0, 212, 255, 0.1);
+            border-radius: 12px;
+            padding: 14px;
+        }
+
+        .info-row {
+            margin-bottom: 10px;
+        }
+
+        .info-row:last-child {
+            margin-bottom: 0;
+        }
+
+        .info-key {
+            font-size: 0.7em;
+            color: #3A5570;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 2px;
+        }
+
+        .info-val {
+            font-size: 0.85em;
+            color: #8AABCC;
+            line-height: 1.5;
+        }
+
+        /* TERMS PANEL */
+        .terms-panel {
+            background: rgba(0, 200, 100, 0.04);
+            border: 1px solid rgba(0, 200, 100, 0.15);
+            border-radius: 14px;
+            padding: 16px;
+        }
+
+        .terms-panel.is-set {
+            border-color: rgba(0, 200, 100, 0.28);
+            background: rgba(0, 200, 100, 0.06);
+        }
+
+        .terms-title {
+            font-family: 'Syne', sans-serif;
+            font-size: 0.72em;
+            font-weight: 700;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            color: #4AE896;
+            margin-bottom: 12px;
+        }
+
+        .terms-input {
+            width: 100%;
+            padding: 9px 12px;
+            background: rgba(8, 16, 32, 0.7);
+            border: 1px solid rgba(0, 200, 100, 0.2);
+            border-radius: 9px;
+            color: #F0F6FF;
+            font-family: 'DM Sans', sans-serif;
+            font-size: 0.85em;
+            outline: none;
+            margin-bottom: 8px;
+            transition: border-color 0.2s;
+        }
+
+        .terms-input:focus {
+            border-color: rgba(0, 200, 100, 0.5);
+        }
+
+        .terms-input::placeholder {
+            color: #3A5570;
+        }
+
+        .btn-set-terms {
+            width: 100%;
+            padding: 10px;
+            background: linear-gradient(135deg, #00C864, #009E50);
+            border: none;
+            border-radius: 9px;
+            color: #fff;
+            font-family: 'Syne', sans-serif;
+            font-size: 0.82em;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 4px 14px rgba(0, 200, 100, 0.2);
+        }
+
+        .btn-set-terms:hover {
+            box-shadow: 0 6px 22px rgba(0, 200, 100, 0.4);
+            transform: translateY(-1px);
+        }
+
+        .btn-edit-terms {
+            width: 100%;
+            padding: 8px;
+            margin-top: 8px;
+            background: rgba(0, 200, 100, 0.08);
+            border: 1px solid rgba(0, 200, 100, 0.2);
+            border-radius: 9px;
+            color: #4AE896;
+            font-family: 'Syne', sans-serif;
+            font-size: 0.78em;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-edit-terms:hover {
+            background: rgba(0, 200, 100, 0.15);
+        }
+
+        .terms-display {
+            font-size: 0.85em;
+            color: #4AE896;
+            line-height: 1.7;
+        }
+
+        /* CARD PANEL */
+        .card-panel {
+            background: rgba(255, 200, 0, 0.03);
+            border: 1px solid rgba(255, 200, 0, 0.15);
+            border-radius: 14px;
+            padding: 16px;
+        }
+
+        .card-panel.is-set {
+            border-color: rgba(255, 200, 0, 0.3);
+            background: rgba(255, 200, 0, 0.05);
+        }
+
+        .card-title {
+            font-family: 'Syne', sans-serif;
+            font-size: 0.72em;
+            font-weight: 700;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            color: #FFD700;
+            margin-bottom: 12px;
+        }
+
+        .card-input {
+            width: 100%;
+            padding: 9px 12px;
+            background: rgba(8, 16, 32, 0.7);
+            border: 1px solid rgba(255, 200, 0, 0.2);
+            border-radius: 9px;
+            color: #F0F6FF;
+            font-family: 'DM Sans', sans-serif;
+            font-size: 0.85em;
+            outline: none;
+            margin-bottom: 8px;
+            transition: border-color 0.2s;
+        }
+
+        .card-input:focus {
+            border-color: rgba(255, 200, 0, 0.5);
+        }
+
+        .card-input::placeholder {
+            color: #3A5570;
+        }
+
+        .btn-save-card {
+            width: 100%;
+            padding: 10px;
+            background: linear-gradient(135deg, #FFD700, #FFA500);
+            border: none;
+            border-radius: 9px;
+            color: #0C1829;
+            font-family: 'Syne', sans-serif;
+            font-size: 0.82em;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-save-card:hover {
+            box-shadow: 0 6px 22px rgba(255, 200, 0, 0.35);
+            transform: translateY(-1px);
+        }
+
+        .card-display {
+            font-size: 0.84em;
+            color: #FFD700;
+            line-height: 1.8;
+        }
+
+        .btn-edit-card {
+            width: 100%;
+            padding: 8px;
+            margin-top: 8px;
+            background: rgba(255, 200, 0, 0.07);
+            border: 1px solid rgba(255, 200, 0, 0.2);
+            border-radius: 9px;
+            color: #FFD700;
+            font-family: 'Syne', sans-serif;
+            font-size: 0.78em;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .btn-edit-card:hover {
+            background: rgba(255, 200, 0, 0.14);
+        }
+
+        /* PAYMENT PANEL */
+        .payment-panel {
+            background: rgba(255, 150, 0, 0.04);
+            border: 1px solid rgba(255, 150, 0, 0.2);
+            border-radius: 14px;
+            padding: 16px;
+            display: none;
+        }
+
+        .payment-panel.visible {
+            display: block;
+        }
+
+        .payment-panel.confirmed {
+            border-color: rgba(0, 200, 100, 0.3);
+            background: rgba(0, 200, 100, 0.06);
+        }
+
+        .payment-panel-title {
+            font-family: 'Syne', sans-serif;
+            font-size: 0.72em;
+            font-weight: 700;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            color: #FFA500;
+            margin-bottom: 12px;
+        }
+
+        .payment-panel.confirmed .payment-panel-title {
+            color: #4AE896;
+        }
+
+        .payment-status-text {
+            font-size: 0.85em;
+            line-height: 1.6;
+            margin-bottom: 10px;
+        }
+
+        .btn-confirm-payment {
+            width: 100%;
+            padding: 11px;
+            background: linear-gradient(135deg, #FFA500, #FF7700);
+            border: none;
+            border-radius: 9px;
+            color: #fff;
+            font-family: 'Syne', sans-serif;
+            font-size: 0.82em;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-confirm-payment:hover {
+            box-shadow: 0 6px 22px rgba(255, 150, 0, 0.4);
+            transform: translateY(-1px);
+        }
+
+        /* CLOSE BUTTON */
+        .btn-close-disc {
+            width: 100%;
+            padding: 11px;
+            background: rgba(239, 68, 68, 0.07);
+            border: 1px solid rgba(239, 68, 68, 0.22);
+            border-radius: 10px;
+            color: #FCA5A5;
+            font-family: 'Syne', sans-serif;
+            font-size: 0.82em;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-close-disc:hover {
+            background: rgba(239, 68, 68, 0.14);
+            border-color: rgba(239, 68, 68, 0.45);
+        }
+
+        .btn-close-disc:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
+        /* MESSAGES */
+        .messages-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .messages-scroll {
+            flex: 1;
+            overflow-y: auto;
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            scroll-behavior: smooth;
+        }
+
+        .messages-scroll::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        .messages-scroll::-webkit-scrollbar-thumb {
+            background: rgba(0, 212, 255, 0.2);
+            border-radius: 4px;
+        }
+
+        .msg {
+            display: flex;
+            gap: 10px;
+            max-width: 72%;
+            align-items: flex-start; /* ← додай цей рядок */
+        }
+
+        .msg.admin {
+            align-self: flex-end;
+            flex-direction: row-reverse;
+        }
+
+        .msg.client {
+            align-self: flex-start;
+        }
+
+        .msg-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 9px;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.9em;
+        }
+
+        .msg.admin .msg-avatar {
+            background: linear-gradient(135deg, rgba(124, 92, 252, 0.25), rgba(0, 212, 255, 0.2));
+            border: 1px solid rgba(124, 92, 252, 0.35);
+        }
+
+        .msg.client .msg-avatar {
+            background: rgba(0, 212, 255, 0.1);
+            border: 1px solid rgba(0, 212, 255, 0.2);
+        }
+
+        /* ✅ ФІКС: обгортка bubble + time */
+        /* ✅ ФІКС: обгортка bubble + time */
+        .msg-wrap {
+            display: flex;           /* змінили з inline-flex */
+            flex-direction: column;
+            min-width: 0;
+            max-width: 100%;
+        }
+
+        .msg-bubble {
+            padding: 11px 15px;
+            border-radius: 14px;
+            font-size: 0.9em;
+            line-height: 1.55;
+            white-space: pre-wrap;
+            width: fit-content;
+            max-width: 100%;
+            align-self: flex-start;  /* ← головний фікс */
+        }
+
+        .msg.admin .msg-bubble {
+            background: linear-gradient(135deg, rgba(124, 92, 252, 0.2), rgba(0, 212, 255, 0.14));
+            border: 1px solid rgba(124, 92, 252, 0.25);
+            border-top-right-radius: 4px;
+            color: #E0EEFF;
+        }
+
+        .msg.client .msg-bubble {
+            background: rgba(0, 212, 255, 0.08);
+            border: 1px solid rgba(0, 212, 255, 0.16);
+            border-top-left-radius: 4px;
+            color: #8AABCC;
+        }
+
+        .msg-bubble.file-bubble {
+            white-space: normal;
+        }
+
+        .msg-time {
+            font-size: 0.7em;
+            color: #3A5570;
+            margin-top: 4px;
+            text-align: right;
+        }
+
+        .msg.client .msg-time {
+            text-align: left;
+        }
+
+        .day-divider {
+            text-align: center;
+            color: #3A5570;
+            font-size: 0.72em;
+            letter-spacing: 1px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin: 8px 0;
+        }
+
+        .day-divider::before,
+        .day-divider::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: rgba(0, 212, 255, 0.08);
+        }
+
+        .closed-banner {
+            padding: 14px 24px;
+            background: rgba(120, 140, 160, 0.07);
+            border-top: 1px solid rgba(120, 140, 160, 0.12);
+            text-align: center;
+            color: #5A7A9A;
+            font-size: 0.85em;
+            flex-shrink: 0;
+        }
+
+        /* INPUT AREA */
+        .input-area {
+            padding: 12px 20px;
+            background: rgba(10, 20, 38, 0.96);
+            border-top: 1px solid rgba(0, 212, 255, 0.1);
+            display: flex;
+            gap: 8px;
+            align-items: flex-end;
+            flex-shrink: 0;
+        }
+
+        .msg-input {
+            flex: 1;
+            padding: 11px 14px;
+            background: rgba(16, 28, 50, 0.95);
+            border: 1.5px solid rgba(0, 212, 255, 0.15);
+            border-radius: 12px;
+            color: #F0F6FF;
+            font-family: 'DM Sans', sans-serif;
+            font-size: 0.9em;
+            outline: none;
+            resize: none;
+            max-height: 120px;
+            line-height: 1.5;
+            transition: border-color 0.2s;
+        }
+
+        .msg-input:focus {
+            border-color: rgba(0, 212, 255, 0.42);
+        }
+
+        .msg-input::placeholder {
+            color: #3A5570;
+        }
+
+        .input-actions {
+            display: flex;
+            gap: 6px;
+            align-items: flex-end;
+            flex-shrink: 0;
+        }
+
+        .icon-btn {
+            width: 42px;
+            height: 42px;
+            border-radius: 11px;
+            border: 1.5px solid rgba(0, 212, 255, 0.18);
+            background: rgba(0, 212, 255, 0.05);
+            color: #00D4FF;
+            font-size: 1.1em;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+            flex-shrink: 0;
+        }
+
+        .icon-btn:hover {
+            background: rgba(0, 212, 255, 0.12);
+            border-color: rgba(0, 212, 255, 0.4);
+        }
+
+        .icon-btn.recording {
+            background: rgba(239, 68, 68, 0.15);
+            border-color: rgba(239, 68, 68, 0.5);
+            color: #F87171;
+            animation: pulse 1.2s infinite;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.35);
+            }
+
+            50% {
+                box-shadow: 0 0 0 6px rgba(239, 68, 68, 0);
+            }
+        }
+
+        .send-btn {
+            width: 42px;
+            height: 42px;
+            border-radius: 11px;
+            background: linear-gradient(135deg, #00D4FF, #7C5CFC);
+            border: none;
+            cursor: pointer;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.05em;
+            transition: all 0.2s;
+            box-shadow: 0 4px 16px rgba(0, 212, 255, 0.28);
+        }
+
+        .send-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 24px rgba(0, 212, 255, 0.45);
+        }
+
+        .file-preview {
+            display: none;
+            padding: 8px 20px;
+            background: rgba(0, 212, 255, 0.04);
+            border-top: 1px solid rgba(0, 212, 255, 0.08);
+            align-items: center;
+            gap: 10px;
+            flex-shrink: 0;
+        }
+
+        .file-preview.visible {
+            display: flex;
+        }
+
+        .file-preview-icon {
+            font-size: 1.4em;
+        }
+
+        .file-preview-name {
+            flex: 1;
+            font-size: 0.85em;
+            color: #8AABCC;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .file-preview-remove {
+            background: none;
+            border: none;
+            color: #F87171;
+            cursor: pointer;
+            font-size: 1.1em;
+            padding: 4px;
+        }
+
+        .record-timer {
+            font-size: 0.82em;
+            color: #F87171;
+            font-family: 'Syne', sans-serif;
+            font-weight: 700;
+            min-width: 40px;
+            display: none;
+        }
+
+        .record-timer.visible {
+            display: block;
+        }
+
+        @media (max-width: 768px) {
+            .sidebar {
+                display: none;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- HEADER -->
+    <div class="chat-header">
+        <a href="{% url 'admin_panel' %}" class="back-btn">←</a>
+        <div class="client-avatar">
+            {% if discussion.service == 'website' %}🌐{% elif discussion.service == 'webapp' %}⚙️{% elif
+            discussion.service == 'bot' %}🤖{% elif discussion.service == 'ai' %}🧠{% else %}💡{% endif %}
+        </div>
+        <div class="client-info">
+            <div class="client-name">{{ discussion.name }}</div>
+            <div class="client-sub">{{ discussion.contact }}</div>
+        </div>
+        <div class="header-tags">
+            <span class="htag htag-service">{{ discussion.get_service_display }}</span>
+            {% if discussion.budget %}<span class="htag htag-budget">{{ discussion.budget }}</span>{% endif %}
+            {% if discussion.status == 'agreed' %}<span class="htag htag-agreed">✅ Узгоджено</span>{% endif %}
+            {% if discussion.status == 'closed' %}<span class="htag htag-closed">🔒 Завершено</span>{% endif %}
+        </div>
+    </div>
+
+    <div class="chat-body">
+        <!-- SIDEBAR -->
+        <div class="sidebar">
+            <div class="sidebar-title">Деталі проєкту</div>
+            <div class="info-block">
+                <div class="info-row">
+                    <div class="info-key">Клієнт</div>
+                    <div class="info-val">{{ discussion.name }}</div>
+                </div>
+                <div class="info-row">
+                    <div class="info-key">Контакт</div>
+                    <div class="info-val">{{ discussion.contact }}</div>
+                </div>
+                <div class="info-row">
+                    <div class="info-key">Послуга</div>
+                    <div class="info-val">{{ discussion.get_service_display }}</div>
+                </div>
+                {% if discussion.budget %}<div class="info-row">
+                    <div class="info-key">Бюджет</div>
+                    <div class="info-val">{{ discussion.budget }}</div>
+                </div>{% endif %}
+                {% if discussion.deadline %}<div class="info-row">
+                    <div class="info-key">Дедлайн</div>
+                    <div class="info-val">{{ discussion.deadline }}</div>
+                </div>{% endif %}
+                <div class="info-row">
+                    <div class="info-key">Дата заявки</div>
+                    <div class="info-val">{{ discussion.created_at|date:"d.m.Y H:i" }}</div>
+                </div>
+            </div>
+            <div class="sidebar-title">Опис</div>
+            <div class="info-block">
+                <div class="info-val" style="white-space:pre-wrap;font-size:0.82em;">{{ discussion.description }}</div>
+            </div>
+            <!-- TERMS -->
+            <div class="terms-panel {% if discussion.final_price %}is-set{% endif %}" id="termsPanel">
+                <div class="terms-title">💰 Фінальні умови</div>
+                <div id="termsDisplay" style="{% if not discussion.final_price %}display:none{% endif %}">
+                    <div class="terms-display">💰 Ціна: <strong>{{ discussion.final_price }}</strong><br>📅 Дедлайн:
+                        <strong>{{ discussion.final_deadline }}</strong></div>
+                    <button class="btn-edit-terms" onclick="showTermsForm()">✏️ Змінити</button>
+                </div>
+                <div id="termsForm" style="{% if discussion.final_price %}display:none{% endif %}">
+                    <input type="text" class="terms-input" id="priceInput" placeholder="Ціна"
+                        value="{{ discussion.final_price }}">
+                    <input type="text" class="terms-input" id="deadlineInput" placeholder="Дедлайн"
+                        value="{{ discussion.final_deadline }}">
+                    <button class="btn-set-terms" onclick="setTerms()">{% if discussion.final_price %}💾 Зберегти{% else
+                        %}✅ Встановити{% endif %}</button>
+                </div>
+            </div>
+            <!-- CARD -->
+            <div class="card-panel {% if discussion.card_number %}is-set{% endif %}" id="cardPanel">
+                <div class="card-title">💳 Реквізити</div>
+                <div id="cardDisplay" style="{% if not discussion.card_number %}display:none{% endif %}">
+                    <div class="card-display">🏦 {{ discussion.card_bank }}<br>💳 {{ discussion.card_number }}<br>👤 {{
+                        discussion.card_holder }}</div>
+                    <button class="btn-edit-card" onclick="showCardForm()">✏️ Змінити</button>
+                </div>
+                <div id="cardForm" style="{% if discussion.card_number %}display:none{% endif %}">
+                    <input type="text" class="card-input" id="cardBankInput" placeholder="Банк"
+                        value="{{ discussion.card_bank }}">
+                    <input type="text" class="card-input" id="cardNumberInput" placeholder="Номер картки"
+                        value="{{ discussion.card_number }}">
+                    <input type="text" class="card-input" id="cardHolderInput" placeholder="Отримувач"
+                        value="{{ discussion.card_holder }}">
+                    <button class="btn-save-card" onclick="saveCard()">{% if discussion.card_number %}💾 Оновити{% else
+                        %}💳 Зберегти{% endif %}</button>
+                </div>
+            </div>
+            <div class="payment-panel {% if discussion.payment_status != 'none' %}visible{% endif %} {% if discussion.payment_status == 'confirmed' %}confirmed{% endif %}"
+                id="paymentPanel">
+                {% if discussion.payment_status == 'pending' %}
+                <div class="payment-panel-title">💳 Клієнт оплатив</div>
+                <div class="payment-status-text" style="color:#FFA500;">Перевірте надходження та підтвердіть.</div>
+                <button class="btn-confirm-payment" onclick="confirmPayment()">✅ Підтвердити оплату</button>
+                {% elif discussion.payment_status == 'confirmed' %}
+                <div class="payment-panel-title" style="color:#4AE896;">✅ Оплату підтверджено</div>
+                <div class="payment-status-text" style="color:#4AE896;">Клієнт отримав підтвердження.</div>
+                {% endif %}
+            </div>
+            <!-- CLOSE -->
+            <button class="btn-close-disc" id="closeBtn" {% if discussion.status == 'closed' %}disabled{% endif %}
+                onclick="closeDiscussion()">
+                {% if discussion.status == 'closed' %}🔒 Завершено{% else %}🔒 Завершити{% endif %}
+            </button>
+        </div>
+
+        <!-- MESSAGES -->
+        <div class="messages-area">
+            <div class="messages-scroll" id="messagesScroll">
+                <div class="day-divider">Початок обговорення</div>
+                {% for msg in messages %}
+                <div class="msg {% if msg.sender == 'admin' %}admin{% else %}client{% endif %}" data-id="{{ msg.id }}">
+                    <div class="msg-avatar">{% if msg.sender == 'admin' %}⚙{% else %}👤{% endif %}</div>
+                    <div class="msg-wrap">
+                        <div class="msg-bubble {% if msg.message_type != 'text' %}file-bubble{% endif %}">
+                            {% if msg.message_type == 'audio' %}
+                            <audio controls src="{{ msg.file.url }}"
+                                style="max-width:220px;height:36px;outline:none;"></audio>
+                            {% elif msg.message_type == 'file' %}
+                            {% if msg.file_name|lower|slice:"-3:" == "png" or msg.file_name|lower|slice:"-3:" == "jpg" or msg.file_name|lower|slice:"-4:" == "jpeg" or msg.file_name|lower|slice:"-3:" == "gif" or msg.file_name|lower|slice:"-4:" == "webp" %}
+                            <img src="{{ msg.file.url }}"
+                                style="max-width:220px;max-height:180px;border-radius:8px;display:block;cursor:pointer;"
+                                onclick="window.open('{{ msg.file.url }}','_blank')">
+                            <div style="font-size:0.75em;margin-top:6px;opacity:0.7;">{{ msg.file_name }}</div>
+                            {% else %}
+                            <a href="{{ msg.file.url }}" download="{{ msg.file_name }}" target="_blank"
+                                style="display:flex;align-items:center;gap:10px;text-decoration:none;color:inherit;">
+                                <span style="font-size:1.6em;flex-shrink:0;">📎</span>
+                                <div>
+                                    <div style="font-size:0.88em;font-weight:600;">{{ msg.file_name }}</div>
+                                    <div style="font-size:0.72em;opacity:0.6;margin-top:2px;">Завантажити</div>
+                                </div>
+                            </a>
+                            {% endif %}
+                            {% else %}{{ msg.text }}{% endif %}
+                        </div>
+                        <div class="msg-time">{{ msg.created_at|date:"d.m H:i" }}</div>
+                    </div>
+                </div>
+                {% empty %}
+                <div style="text-align:center;color:#3A5570;font-size:0.85em;padding:40px 0;">Напишіть перше
+                    повідомлення</div>
+                {% endfor %}
+            </div>
+
+            <div class="file-preview" id="filePreview">
+                <span class="file-preview-icon" id="filePreviewIcon">📎</span>
+                <span class="file-preview-name" id="filePreviewName"></span>
+                <button class="file-preview-remove" onclick="clearFile()" title="Видалити">✕</button>
+            </div>
+
+            {% if discussion.status == 'closed' %}
+            <div class="closed-banner">🔒 Завершено {% if discussion.closed_at %}{{ discussion.closed_at|date:"d.m.Y
+                оH:i" }}{% endif %}</div>
+            {% else %}
+            <div class="input-area" id="inputArea">
+                <textarea class="msg-input" id="msgInput" placeholder="Написати клієнту..." rows="1"></textarea>
+                <div class="input-actions">
+                    <span class="record-timer" id="recordTimer">0:00</span>
+                    <label class="icon-btn" title="Прикріпити файл" style="cursor:pointer;">
+                        📎 <input type="file" id="fileInput" style="display:none;" onchange="onFileSelected(this)">
+                    </label>
+                    <button class="icon-btn" id="recordBtn" title="Голосове повідомлення"
+                        onclick="toggleRecord()">🎤</button>
+                    <button class="send-btn" onclick="sendMessage()">➤</button>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <script>
+        const SEND_URL = "{% url 'admin_send_message' discussion.id %}";
+        const SEND_FILE_URL = "{% url 'admin_send_file' discussion.id %}";
+        const POLL_URL = "{% url 'admin_poll_messages' discussion.id %}";
+        const SET_TERMS_URL = "{% url 'admin_set_terms' discussion.id %}";
+        const SET_CARD_URL = "{% url 'admin_set_card' discussion.id %}";
+        const CONFIRM_URL = "{% url 'admin_confirm_payment' discussion.id %}";
+        const CLOSE_URL = "{% url 'admin_close_discussion' discussion.id %}";
+        const CSRF = "{{ csrf_token }}";
+
+        const scroll = document.getElementById('messagesScroll');
+        function scrollBottom() { scroll.scrollTop = scroll.scrollHeight; }
+        scrollBottom();
+
+        function escHtml(t) { return String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\n/g, '<br>'); }
+        function formatSize(b) { if (!b) return ''; if (b < 1024) return b + 'Б'; if (b < 1048576) return (b / 1024).toFixed(1) + 'КБ'; return (b / 1048576).toFixed(1) + 'МБ'; }
+        function fileIcon(n) { if (!n) return '📎'; const e = n.split('.').pop().toLowerCase(); return { pdf: '📄', doc: '📝', docx: '📝', xls: '📊', xlsx: '📊', txt: '📃', zip: '🗜', rar: '🗜', png: '🖼', jpg: '🖼', jpeg: '🖼', gif: '🖼', webp: '🖼', mp4: '🎬', mov: '🎬', js: '💻', py: '💻', ts: '💻', html: '💻', css: '💻' }[e] || '📎'; }
+        function isImg(n) { return n && /\.(png|jpg|jpeg|gif|webp|svg)$/i.test(n); }
+
+        function buildBubble(msg) {
+            if (msg.message_type === 'audio') return `<audio controls src="${msg.file_url}" style="max-width:220px;height:36px;outline:none;"></audio>`;
+            if (msg.message_type === 'file' && msg.file_url) {
+                if (isImg(msg.file_name)) return `<img src="${msg.file_url}" style="max-width:220px;max-height:180px;border-radius:8px;display:block;cursor:pointer;" onclick="window.open('${msg.file_url}','_blank')"><div style="font-size:0.75em;margin-top:6px;opacity:0.7;">${escHtml(msg.file_name)}</div>`;
+                return `<a href="${msg.file_url}" download="${escHtml(msg.file_name)}" target="_blank" style="display:flex;align-items:center;gap:10px;text-decoration:none;color:inherit;"><span style="font-size:1.6em;flex-shrink:0;">${fileIcon(msg.file_name)}</span><div><div style="font-size:0.88em;font-weight:600;word-break:break-all;">${escHtml(msg.file_name)}</div><div style="font-size:0.72em;opacity:0.6;margin-top:2px;">${formatSize(msg.file_size)} · Завантажити</div></div></a>`;
+            }
+            return escHtml(msg.text || '');
+        }
+
+        function appendMsg(msg) {
+            const isAdmin = msg.sender === 'admin';
+            const div = document.createElement('div');
+            div.className = `msg ${isAdmin ? 'admin' : 'client'}`;
+            div.dataset.id = msg.id;
+            const isFile = msg.message_type !== 'text';
+            div.innerHTML = `<div class="msg-avatar">${isAdmin ? '⚙' : '👤'}</div><div class="msg-wrap"><div class="msg-bubble${isFile ? ' file-bubble' : ''}">${buildBubble(msg)}</div><div class="msg-time">${msg.created_at}</div></div>`;
+            scroll.appendChild(div);
+            scrollBottom();
+        }
+
+        async function sendMessage() {
+            const input = document.getElementById('msgInput');
+            if (selectedFile) { await uploadFile(selectedFile); return; }
+            if (!input) return;
+            const text = input.value.trim();
+            if (!text) return;
+            input.value = ''; input.style.height = 'auto';
+            const res = await fetch(SEND_URL, { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF }, body: JSON.stringify({ text }) });
+            if (res.ok) appendMsg(await res.json());
+        }
+
+        const msgInput = document.getElementById('msgInput');
+        if (msgInput) {
+            msgInput.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); } });
+            msgInput.addEventListener('input', () => { msgInput.style.height = 'auto'; msgInput.style.height = Math.min(msgInput.scrollHeight, 120) + 'px'; });
+        }
+
+        let selectedFile = null;
+        function onFileSelected(input) {
+            const f = input.files[0]; if (!f) return;
+            selectedFile = f;
+            document.getElementById('filePreviewIcon').textContent = fileIcon(f.name);
+            document.getElementById('filePreviewName').textContent = f.name + ' (' + formatSize(f.size) + ')';
+            document.getElementById('filePreview').classList.add('visible');
+        }
+        function clearFile() {
+            selectedFile = null;
+            document.getElementById('fileInput').value = '';
+            document.getElementById('filePreview').classList.remove('visible');
+        }
+        async function uploadFile(file) {
+            const fd = new FormData(); fd.append('file', file);
+            clearFile();
+            const res = await fetch(SEND_FILE_URL, { method: 'POST', headers: { 'X-CSRFToken': CSRF }, body: fd });
+            if (res.ok) appendMsg(await res.json());
+            else alert('Помилка завантаження файлу');
+        }
+
+        let mediaRecorder = null, audioChunks = [], recordInterval = null, recordSeconds = 0;
+        async function toggleRecord() {
+            const btn = document.getElementById('recordBtn');
+            const timer = document.getElementById('recordTimer');
+            if (mediaRecorder && mediaRecorder.state === 'recording') {
+                mediaRecorder.stop(); clearInterval(recordInterval);
+                btn.classList.remove('recording'); btn.textContent = '🎤'; timer.classList.remove('visible'); return;
+            }
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                audioChunks = []; recordSeconds = 0;
+                mediaRecorder = new MediaRecorder(stream);
+                mediaRecorder.ondataavailable = e => { if (e.data.size > 0) audioChunks.push(e.data); };
+                mediaRecorder.onstop = async () => {
+                    stream.getTracks().forEach(t => t.stop());
+                    const blob = new Blob(audioChunks, { type: 'audio/webm' });
+                    const fd = new FormData(); fd.append('file', blob, `voice_${Date.now()}.webm`);
+                    const res = await fetch(SEND_FILE_URL, { method: 'POST', headers: { 'X-CSRFToken': CSRF }, body: fd });
+                    if (res.ok) appendMsg(await res.json());
+                };
+                mediaRecorder.start();
+                btn.classList.add('recording'); btn.textContent = '⏹'; timer.classList.add('visible');
+                recordInterval = setInterval(() => {
+                    recordSeconds++;
+                    const m = Math.floor(recordSeconds / 60); const s = recordSeconds % 60;
+                    timer.textContent = `${m}:${s.toString().padStart(2, '0')}`;
+                }, 1000);
+            } catch (err) { alert('Не вдалося отримати доступ до мікрофону'); }
+        }
+
+        function getLastId() { const msgs = scroll.querySelectorAll('.msg[data-id]'); if (!msgs.length) return 0; return Math.max(...[...msgs].map(m => parseInt(m.dataset.id) || 0)); }
+        let currentPaymentStatus = "{{ discussion.payment_status }}";
+
+        async function poll() {
+            try {
+                const res = await fetch(`${POLL_URL}?after=${getLastId()}`);
+                if (res.ok) {
+                    const data = await res.json();
+                    data.messages.forEach(m => appendMsg(m));
+                    if (data.payment_status && data.payment_status !== currentPaymentStatus) {
+                        currentPaymentStatus = data.payment_status;
+                        updatePaymentPanel(data.payment_status);
+                    }
+                }
+            } catch (e) { }
+        }
+        setInterval(poll, 3000);
+
+        function updatePaymentPanel(status) {
+            const panel = document.getElementById('paymentPanel');
+            panel.classList.add('visible');
+            if (status === 'pending') {
+                panel.classList.remove('confirmed');
+                panel.innerHTML = `<div class="payment-panel-title">💳 Клієнт оплатив</div><div class="payment-status-text" style="color:#FFA500;">Перевірте надходження та підтвердіть.</div><button class="btn-confirm-payment" onclick="confirmPayment()">✅ Підтвердити оплату</button>`;
+            } else if (status === 'confirmed') {
+                panel.classList.add('confirmed');
+                panel.innerHTML = `<div class="payment-panel-title" style="color:#4AE896;">✅ Оплату підтверджено</div><div class="payment-status-text" style="color:#4AE896;">Клієнт отримав підтвердження.</div>`;
+            }
+        }
+
+        function showTermsForm() { document.getElementById('termsDisplay').style.display = 'none'; document.getElementById('termsForm').style.display = 'block'; }
+        async function setTerms() {
+            const price = document.getElementById('priceInput').value.trim();
+            const deadline = document.getElementById('deadlineInput').value.trim();
+            if (!price || !deadline) { alert('Заповніть ціну та дедлайн'); return; }
+            const res = await fetch(SET_TERMS_URL, { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF }, body: JSON.stringify({ final_price: price, final_deadline: deadline }) });
+            if (res.ok) {
+                const data = await res.json();
+                document.getElementById('termsDisplay').querySelector('.terms-display').innerHTML = `💰 Ціна: <strong>${data.final_price}</strong><br>📅 Дедлайн: <strong>${data.final_deadline}</strong>`;
+                document.getElementById('termsDisplay').style.display = 'block';
+                document.getElementById('termsForm').style.display = 'none';
+                document.getElementById('termsPanel').classList.add('is-set');
+                await poll();
+            } else { const e = await res.json(); alert(e.error || 'Помилка'); }
+        }
+
+        function showCardForm() { document.getElementById('cardDisplay').style.display = 'none'; document.getElementById('cardForm').style.display = 'block'; }
+        async function saveCard() {
+            const bank = document.getElementById('cardBankInput').value.trim();
+            const number = document.getElementById('cardNumberInput').value.trim();
+            const holder = document.getElementById('cardHolderInput').value.trim();
+            if (!bank || !number || !holder) { alert('Заповніть всі поля'); return; }
+            const res = await fetch(SET_CARD_URL, { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF }, body: JSON.stringify({ card_bank: bank, card_number: number, card_holder: holder }) });
+            if (res.ok) {
+                const data = await res.json();
+                document.getElementById('cardDisplay').querySelector('.card-display').innerHTML = `🏦 ${data.card_bank}<br>💳 ${data.card_number}<br>👤 ${data.card_holder}`;
+                document.getElementById('cardDisplay').style.display = 'block';
+                document.getElementById('cardForm').style.display = 'none';
+                document.getElementById('cardPanel').classList.add('is-set');
+            }
+        }
+
+        async function confirmPayment() {
+            const res = await fetch(CONFIRM_URL, { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF }, body: JSON.stringify({}) });
+            if (res.ok) { currentPaymentStatus = 'confirmed'; updatePaymentPanel('confirmed'); await poll(); }
+        }
+
+        async function closeDiscussion() {
+            if (!confirm('Завершити обговорення?')) return;
+            const res = await fetch(CLOSE_URL, { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF }, body: JSON.stringify({}) });
+            if (res.ok) {
+                await poll();
+                const ia = document.getElementById('inputArea');
+                if (ia) ia.outerHTML = `<div class="closed-banner">🔒 Обговорення завершено</div>`;
+                const btn = document.getElementById('closeBtn');
+                if (btn) { btn.disabled = true; btn.textContent = '🔒 Завершено'; }
+            }
+        }
+    </script>
+</body>
+
+</html>
